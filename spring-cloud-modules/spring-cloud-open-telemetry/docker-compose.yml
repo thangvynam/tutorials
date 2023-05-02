@@ -1,17 +1,17 @@
 version: "4.0"
 
 services:
-  product-service:
-    platform: linux/x86_64
-    build: spring-cloud-open-telemetry1/
-    ports:
-      - "8080:8080"
-
-  price-service:
-    platform: linux/x86_64
-    build: spring-cloud-open-telemetry2/
-    ports:
-      - "8081"
+#  product-service:
+#    platform: linux/x86_64
+#    build: spring-cloud-open-telemetry1/
+#    ports:
+#      - "8080:8080"
+#
+#  price-service:
+#    platform: linux/x86_64
+#    build: spring-cloud-open-telemetry2/
+#    ports:
+#      - "8081"
 
   jaeger-service:
     image: jaegertracing/all-in-one:latest
@@ -19,12 +19,29 @@ services:
       - "16686:16686"
       - "14250"
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
   collector:
     image: otel/opentelemetry-collector:0.72.0
     command: [ "--config=/etc/otel-collector-config.yml" ]
     volumes:
       - ./otel-config.yml:/etc/otel-collector-config.yml
     ports:
-      - "4317:4317"
+      - "4317:4317" # OTLP gRPC receiver port
+      - "8889:8889" # Promentheus exporter metrics port
     depends_on:
       - jaeger-service
+      - prometheus
+      - grafana
